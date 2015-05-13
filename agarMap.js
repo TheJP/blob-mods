@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         My Fancy New Userscript
-// @namespace    http://your.homepage/
+// @name         AgarMap
+// @namespace    http://localhost/
 // @version      0.1
-// @description  enter something useful
-// @author       You
+// @description  Displayes your coordinates (Later a map is planned)
+// @author       mupfel / jp
 // @match        http://agar.io/
 // @grant        none
 // ==/UserScript==
