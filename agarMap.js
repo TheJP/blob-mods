@@ -20,10 +20,11 @@ agarMap.init = function init() {
     $('body').append($('<div id="mapContainer" style="position:absolute; top:0; left:0; background-color:lightgreen"></div>'));
 }
 
-agarMap.process = function process(blobData) {
+agarMap.process = function process(blobs) {
+    //console.log(blobs);
     var text = '';
     var map = '<div id="map" style="width: 112px; height: 112px; border: 2px solid black; margin: 10px 10px; box-sizing: content-box; background-color: white;">';
-    blobData.forEach(function(blob) {
+    blobs.forEach(function(blob) {
         if($.inArray(blob.id, agarMap.ids) > -1) {
             var radius = Math.max(blob.size / 100, 1.5);
             var left = Math.round((blob.x / 100) - radius);
@@ -46,87 +47,76 @@ agarMap.display = function display(text) {
 
 agarMap.init();
 
-WebSocket2 = WebSocket;
+agarMap.processMessage16 = function processMessage16(dataView) {
+    var offset = 1; // Because first byte is message type
+    // Walk over some data
+    var length = dataView.getUint16(offset, true);
+    offset += 2 + length * 8;
+    
+    var blobs = [];
+    
+    while(true) {
+        var blob = {};
+        blob.id = dataView.getUint32(offset, true); offset += 4;
+        if(blob.id == 0) break; // Break if id zero, indicates end of blob array
+        
+        blob.x = dataView.getFloat32(offset, true); offset += 4;
+        blob.y = dataView.getFloat32(offset, true); offset += 4;
+        blob.size = dataView.getFloat32(offset, true); offset += 4;
+        // Parse color (base 16)
+        blob.color = (dataView.getUint8(offset++) << 16 | dataView.getUint8(offset++) << 8 | dataView.getUint8(offset++)).toString(16);
+        blob.color = "#" + new Array(7-blob.color.length).join("0") + blob.color; // Add starting hash and missing 0's
+        
+        var unknown = dataView.getUint8(offset++); // what is this for?
+        
+        // Parse text (seems always to be empty?)
+        var textObj = agarMap.parseString(dataView, offset);
+        offset = textObj.offset;
+        blob.name = textObj.text;
+        blobs.push(blob);
+    }
+    agarMap.process(blobs);
+}
 
-unsafeWindow.WebSocket = function(a) {
-    var socket = new WebSocket2(a);
+// returns object containing text and new offset
+agarMap.parseString = function parseString(dataView, offset) {
+    var text = "";
+    while(true) {
+        var charCode = dataView.getUint16(offset, true); offset += 2;
+        if(charCode == 0) break; // break if end of string
+        text += String.fromCharCode(charCode);
+    }
+    return {text: text, offset: offset};
+}
+
+WebSocketOrig = WebSocket;
+
+// hijack WebSocket
+unsafeWindow.WebSocket = function(address) {
+    // Create WebSocket from Original reference
+    var socket = new WebSocketOrig(address);
+    
+    // hijack on message after timeout (should be enough time for agar to set onmessage)
     setTimeout(function(){
-        oldOnMessage = socket.onmessage;
-        socket.onmessage = function(evt) {
-            function b() {
-                for (var a = "";;) {
-                    var b = e.getUint16(c, !0);
-                    c += 2;
-                    if (0 == b) break;
-                    a += String.fromCharCode(b);
-                }
-                return a;
-            }
-            function Ba(a) {
-                D = +new Date;
-                var b = Math.random(),
-                    c = 1;
-                da = !1;
-                for (var e = a.getUint16(c, !0), c = c + 2, d = 0; d < e; ++d) {
-                    var f = w[a.getUint32(c, !0)],
-                        g = w[a.getUint32(c + 4, !0)],
-                        c = c + 8;
-                    f && g && (g.destroy(), g.ox =
-                               g.x, g.oy = g.y, g.oSize = g.size, g.nx = f.x, g.ny = f.y, g.nSize = g.size, g.updateTime = D)
-                }
-                var blobData = [];
-                for (;;) {
-                    e = a.getUint32(c, !0);
-                    c += 4;
-                    if (0 == e) break;
-                    for (var d = a.getFloat32(c, !0), c = c + 4, f = a.getFloat32(c, !0), c = c + 4, g = a.getFloat32(c, !0), c = c + 4, h = a.getUint8(c++), k = a.getUint8(c++), l = a.getUint8(c++), h = (h << 16 | k << 8 | l).toString(16); 6 > h.length;) h = "0" + h;
-                    h = "#" + h;
-                    l = a.getUint8(c++);
-                    k = !!(l & 1);
-                    l & 2 && (c += 4);
-                    l & 4 && (c += 8);
-                    l & 8 && (c += 16);
-                    for (l = "";;) {
-                        var n = a.getUint16(c, !0),
-                            c = c + 2;
-                        if (0 == n) break;
-                        l += String.fromCharCode(n)
-                    }
-                    n = null;
-                    blobData.push({id: e, x: d, y: f, color: h, size: g});
-                }
-                agarMap.process(blobData);
-            }
-            var c = 1, e = new DataView(evt.data);
-            var m =[];
-            var w = {};
-            switch (e.getUint8(0)) {
+        onMessageOrig = socket.onmessage; // save orignal function reference to call later
+        // own onmessage implementation
+        socket.onmessage = function(event) {
+           
+            var dataView = new DataView(event.data);
+
+            // Switch for different message types
+            switch (dataView.getUint8(0)) {
                 case 16:
-                    Ba(e);
-                    //console.log(JSON.stringify(m));
+                    agarMap.processMessage16(dataView);
                     break;
                 case 32:
                     // Get own blob id
-                    agarMap.ids.push(e.getUint32(1, !0));
-                    break;
-                case 49:
-                    a = e.getUint32(c, !0);
-                    c += 4;
-                    y = [];
-                    for (var d = 0; d < a; ++d) {
-                        var f = e.getUint32(c, !0),
-                            c = c + 4;
-                        y.push({
-                            id: f,
-                            name: b()
-                        })
-                    }
-                    //console.log(JSON.stringify(y));
-
+                    agarMap.ids.push(dataView.getUint32(1, true));
                     break;
             }
-            oldOnMessage(evt);
+            onMessageOrig(event);
         }
     }, 1000);
+    
     return socket;
 };
