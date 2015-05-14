@@ -1,15 +1,50 @@
 // ==UserScript==
 // @name         AgarMap
 // @namespace    http://localhost/
-// @version      0.1
+// @version      0.2
 // @description  Displayes your coordinates (Later a map is planned)
 // @author       mupfel / jp
 // @match        http://agar.io/
 // @grant        none
 // ==/UserScript==
 
+
+//Add compatibelity line for monkey addons
+window.unsafeWindow = window.unsafeWindow || window;
+
+unsafeWindow.agarMap = {};
+
+agarMap.ids = [];
+
+agarMap.init = function init() {
+    $('body').append($('<div id="mapContainer" style="position:absolute; top:0; left:0; background-color:lightgreen"></div>'));
+}
+
+agarMap.process = function process(blobData) {
+    var text = '';
+    var map = '<div id="map" style="width: 115px; height: 115px; border: 2px solid black; margin: 10px 10px; box-sizing: content-box;">';
+    blobData.forEach(function(blob) {
+        if($.inArray(blob.id, agarMap.ids) > -1) {
+            map += '<div style="position: absolute; width: 3px; height: 3px; margin-left: ' +
+                Math.round(blob.x / 100) + 'px; margin-top: ' + 
+                Math.round(blob.y / 100) + 'px; background-color: red;">&nbsp;</div>';
+            text += '<div>x: ' + Math.round(blob.x) + ' / y: ' + Math.round(blob.y) + '</div>';
+        }
+    });
+    map += '</div>'
+    text = map + text;
+    agarMap.display(text);
+};
+
+agarMap.display = function display(text) {
+    $('#mapContainer').html(text);
+};
+
+agarMap.init();
+
 WebSocket2 = WebSocket;
-WebSocket = function(a) {
+
+unsafeWindow.WebSocket = function(a) {
     var socket = new WebSocket2(a);
     setTimeout(function(){
         oldOnMessage = socket.onmessage;
@@ -91,27 +126,3 @@ WebSocket = function(a) {
     }, 1000);
     return socket;
 };
-
-agarMap = {};
-
-agarMap.ids = [];
-
-agarMap.init = function init() {
-    $('body').append($('<div id="agarMap" style="position:absolute; top:0; left:0; background-color:lightgreen"></div>'));
-}
-
-agarMap.process = function process(blobData) {
-    var text = '';
-    blobData.forEach(function(blob) {
-        if($.inArray(blob.id, agarMap.ids) > -1) {
-            text += '<div>x: ' + Math.round(blob.x) + ' - y: ' + Math.round(blob.y) + '</div>';
-        }
-    });
-    agarMap.display(text);
-};
-
-agarMap.display = function display(text) {
-    $('#agarMap').html(text);
-};
-
-agarMap.init();
