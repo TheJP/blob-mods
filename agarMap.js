@@ -18,12 +18,19 @@ agarMap.ids = [];
 
 agarMap.init = function init() {
     $('body').append($('<div id="mapContainer" style="position:absolute; top:0; left:0; background-color:lightgreen"></div>'));
+    $('#mapContainer').append($('<div id="map"></div>')
+       .css('width', '112px')
+       .css('height', '112px')
+       .css('border', '2px solid black')
+       .css('margin', '10px')
+       .css('background-color', 'white'));
+    $('#mapContainer').append($('<div id="coords"></div>'));
 }
 
 agarMap.process = function process(blobs) {
     //console.log(blobs);
     var text = '';
-    var map = '<div id="map" style="width: 112px; height: 112px; border: 2px solid black; margin: 10px 10px; box-sizing: content-box; background-color: white;">';
+    var map = '';
     blobs.forEach(function(blob) {
         if($.inArray(blob.id, agarMap.ids) > -1) {
             var radius = Math.max(blob.size / 100, 1.5);
@@ -36,13 +43,12 @@ agarMap.process = function process(blobs) {
             text += '<div>x: ' + Math.round(blob.x) + ' / y: ' + Math.round(blob.y) + ' (' + Math.round(blob.size) + ')</div>';
         }
     });
-    map += '</div>'
-    text = map + text;
-    agarMap.display(text);
+    agarMap.display(text, map);
 };
 
-agarMap.display = function display(text) {
-    $('#mapContainer').html(text);
+agarMap.display = function display(text, map) {
+    $('#coords').html(text);
+    $('#map').html(map);
 };
 
 agarMap.init();
