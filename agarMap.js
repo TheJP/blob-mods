@@ -22,13 +22,17 @@ agarMap.init = function init() {
 
 agarMap.process = function process(blobData) {
     var text = '';
-    var map = '<div id="map" style="width: 115px; height: 115px; border: 2px solid black; margin: 10px 10px; box-sizing: content-box;">';
+    var map = '<div id="map" style="width: 112px; height: 112px; border: 2px solid black; margin: 10px 10px; box-sizing: content-box; background-color: white;">';
     blobData.forEach(function(blob) {
         if($.inArray(blob.id, agarMap.ids) > -1) {
-            map += '<div style="position: absolute; width: 3px; height: 3px; margin-left: ' +
-                Math.round(blob.x / 100) + 'px; margin-top: ' + 
-                Math.round(blob.y / 100) + 'px; background-color: red;">&nbsp;</div>';
-            text += '<div>x: ' + Math.round(blob.x) + ' / y: ' + Math.round(blob.y) + '</div>';
+            var radius = Math.max(blob.size / 100, 1.5);
+            var left = Math.round((blob.x / 100) - radius);
+            var top = Math.round((blob.y / 100) - radius);
+            var dimension = Math.round(2*radius);
+            map += '<div style="position: absolute; width: ' + dimension + 'px; height: ' + dimension + 'px; margin-left: ' +
+                left + 'px; margin-top: ' +
+                top + 'px; background-color: red;">&nbsp;</div>';
+            text += '<div>x: ' + Math.round(blob.x) + ' / y: ' + Math.round(blob.y) + ' (' + Math.round(blob.size) + ')</div>';
         }
     });
     map += '</div>'
