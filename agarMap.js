@@ -17,13 +17,18 @@ unsafeWindow.agarMap = {};
 agarMap.ids = [];
 
 agarMap.init = function init() {
-    $('body').append($('<div id="mapContainer" style="position:absolute; top:0; left:0; background-color:lightgreen"></div>'));
+    $('body').append($('<div id="mapContainer"></div>')
+       .css('position', 'absolute')
+       .css('top', 0)
+       .css('left', 0)
+       .css('background-color', 'lightgreen'));
     $('#mapContainer').append($('<div id="map"></div>')
        .css('width', '112px')
        .css('height', '112px')
        .css('border', '2px solid black')
        .css('margin', '10px')
-       .css('background-color', 'white'));
+       .css('background-color', 'white')
+       .css('box-sizing', 'content-box'));
     $('#mapContainer').append($('<div id="coords"></div>'));
 }
 
@@ -37,9 +42,12 @@ agarMap.process = function process(blobs) {
             var left = Math.round((blob.x / 100) - radius);
             var top = Math.round((blob.y / 100) - radius);
             var dimension = Math.round(2*radius);
-            map += '<div style="position: absolute; width: ' + dimension + 'px; height: ' + dimension + 'px; margin-left: ' +
-                left + 'px; margin-top: ' +
-                top + 'px; background-color: red;">&nbsp;</div>';
+            $('#blob-' + blob.id)
+               .css('width', dimension + 'px')
+               .css('height', dimension + 'px')
+               .css('margin-left', left + 'px')
+               .css('margin-top', top + 'px');
+            //TODO: logic to remove blobs, which are not used anymore
             text += '<div>x: ' + Math.round(blob.x) + ' / y: ' + Math.round(blob.y) + ' (' + Math.round(blob.size) + ')</div>';
         }
     });
@@ -48,10 +56,14 @@ agarMap.process = function process(blobs) {
 
 agarMap.display = function display(text, map) {
     $('#coords').html(text);
-    $('#map').html(map);
 };
 
-agarMap.init();
+agarMap.addBlob = function addBlob(id) {
+    $('#map').append($('<div id="blob-' + id + '"></div>')
+       .css('position', 'absolute')
+       .css('background-color', 'red'));
+    agarMap.ids.push(id);
+};
 
 agarMap.processMessage16 = function processMessage16(dataView) {
     var offset = 1; // Because first byte is message type
@@ -117,7 +129,7 @@ unsafeWindow.WebSocket = function(address) {
                     break;
                 case 32:
                     // Get own blob id
-                    agarMap.ids.push(dataView.getUint32(1, true));
+                    agarMap.addBlob(dataView.getUint32(1, true));
                     break;
             }
             onMessageOrig(event);
@@ -126,3 +138,5 @@ unsafeWindow.WebSocket = function(address) {
     
     return socket;
 };
+
+agarMap.init();
