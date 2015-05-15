@@ -122,11 +122,10 @@ agarMap.processMessage16 = function processMessage16(dataView) {
         existing[dataView.getUint32(offset, true)] = true; offset += 4;
     }
 
-
     // remove own ids that no longer exists
-    for(i = 0; i < agarMap.ids.length; i++) {
+    for(i = agarMap.ids.length - 1; i >= 0; --i) {
         if(existing[agarMap.ids[i]] === undefined) {
-            agarMap.removeBlob(i--);
+            agarMap.removeBlob(i);
         }
     }
 
