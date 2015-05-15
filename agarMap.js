@@ -64,7 +64,7 @@ agarMap.addBlob = function addBlob(id) {
     agarMap.ids.push(id);
 };
 
-agarMap.removeBlob = function addBlob(index) {
+agarMap.removeBlob = function removeBlob(index) {
     $('#blob-' + agarMap.ids[index]).remove();
     agarMap.ids.splice(index, 1);
 };
