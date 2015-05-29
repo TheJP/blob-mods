@@ -16,6 +16,8 @@ unsafeWindow.agarMap = {};
 
 agarMap.ids = [];
 
+agarMap.ip = 'unknown';
+
 agarMap.init = function init() {
     console.log("starting agarMap...");
     $('body').append($('<div id="mapContainer"></div>')
@@ -47,7 +49,7 @@ agarMap.init = function init() {
 };
 
 agarMap.process = function process(blobs) {
-    var text = '';
+    var text = '<div>IP: ' + agarMap.ip + '</div>';
     blobs.forEach(function(blob) {
         if($.inArray(blob.id, agarMap.ids) > -1) {
             var radius = Math.max(blob.size / 100, 1.5);
@@ -154,6 +156,10 @@ WebSocketOrig = WebSocket;
 
 // hijack WebSocket
 unsafeWindow.WebSocket = function(address) {
+
+    // save ip
+    agarMap.ip = address.replace('ws://', '');
+
     // Create WebSocket from Original reference
     var socket = new WebSocketOrig(address);
 
