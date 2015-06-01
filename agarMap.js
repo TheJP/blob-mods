@@ -99,9 +99,9 @@ agarMap.processMessage16 = function processMessage16(dataView) {
         blob.id = dataView.getUint32(offset, true); offset += 4;
         if(blob.id == 0) break; // Break if id zero, indicates end of blob array
 
-        blob.x = dataView.getUint16(offset, true); offset += 2;
-        blob.y = dataView.getUint16(offset, true); offset += 2;
-        blob.size = dataView.getUint16(offset, true); offset += 2;
+        blob.x = dataView.getInt16(offset, true); offset += 2;
+        blob.y = dataView.getInt16(offset, true); offset += 2;
+        blob.size = dataView.getInt16(offset, true); offset += 2;
         // Parse color (base 16)
         blob.color = (dataView.getUint8(offset++) << 16 | dataView.getUint8(offset++) << 8 | dataView.getUint8(offset++)).toString(16);
         blob.color = "#" + new Array(7-blob.color.length).join("0") + blob.color; // Add starting hash and missing 0's
@@ -122,8 +122,6 @@ agarMap.processMessage16 = function processMessage16(dataView) {
         blobs.push(blob);
         existing[blob.id] = true;
     }
-
-    offset += 2; // what is here?
 
     length = dataView.getUint32(offset, true);
     for(i = 0; i < length; i++) {
